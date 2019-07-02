@@ -36,4 +36,4 @@ pi@pitestenv:~ $ sudo gpsd /dev/ttyAMA0 -F /var/run/gpsd.sock
 
 
 Once data is being retrieved, python can get the GPS data
-pi@pitestenv:~ $ python ~/dv/test/gpsdData.py
+pi@pitestenv:~ $ python ~/gps/gpsdData.py
