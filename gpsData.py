@@ -1,9 +1,8 @@
 #! /usr/bin/python
 import sys
-import gpsData as GpsData 
 import os
 from gps import *
-from time import *
+import time
 import threading
  
 gpsd = None #seting the global variable
@@ -71,12 +70,19 @@ def getCoords():
   return coords
 
 def main():
-  #print "Starting.... %s"%(strftime("%Y-%m-%d %H:%M:%S", gmtime()))
+  print "Starting.... %s"%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))
   # use GPS data for message
-  coords = GpsData.getCoords()
-  lat=str(coords['lat'])
-  lon=str(coords['lon'])
-  utc=str(coords['utc'])
+  i=0
+  while i<10:
+    coords = getCoords()
+    lat=str(coords['lat'])
+    lon=str(coords['lon'])
+    utc=str(coords['utc'])
+    print "lat: " + lat
+    print "lon: " + lon
+    print "utc: " + utc
+    i=i+1
+  print "Ending..."
 
 if __name__ == '__main__':
     main()
