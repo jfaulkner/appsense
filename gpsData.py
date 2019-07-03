@@ -4,11 +4,12 @@ import os
 from gps import *
 import time
 import threading
+from pymongo import MongoClient
  
 gpsd = None #seting the global variable
 gpsp = None
-SAMPLE_RATE = 2 #set to a reasonable retry delay
- 
+SAMPLE_RATE = 5 #set to a reasonable retry delay
+
 class GpsPoller(threading.Thread):
   def __init__(self):
     threading.Thread.__init__(self)
@@ -23,7 +24,7 @@ class GpsPoller(threading.Thread):
     while gpsp.running:
       gpsd.next()
 
-def getCoords():
+def getGpsData():
   global gpsp 
   gpsp = GpsPoller() # create the thread
   coords = {'lat':0.0,'lon':0.0,'utc':''}
@@ -31,58 +32,42 @@ def getCoords():
     gpsp.start() # start it up
     while coords['lat']==0.0 or coords['lon']==0.0 or coords['utc']=='':
       # gps connection could take some time
-      #print gpsd.fix.latitude,', ',gpsd.fix.longitude,'  Time: ',gpsd.utc
- 
-      #os.system('clear')
- 
-      #print
-      #print ' GPS reading'
-      #print '----------------------------------------'
-      #print 'latitude    ' , gpsd.fix.latitude
-      #print 'longitude   ' , gpsd.fix.longitude
-      #print 'time utc    ' , gpsd.utc,' + ', gpsd.fix.time
-      #print 'altitude (m)' , gpsd.fix.altitude
-      #print 'eps         ' , gpsd.fix.eps
-      #print 'epx         ' , gpsd.fix.epx
-      #print 'epv         ' , gpsd.fix.epv
-      #print 'ept         ' , gpsd.fix.ept
-      #print 'speed (m/s) ' , gpsd.fix.speed
-      #print 'climb       ' , gpsd.fix.climb
-      #print 'track       ' , gpsd.fix.track
-      #print 'mode        ' , gpsd.fix.mode
-      #print
-      #print 'sats        ' , gpsd.satellites
+      print('----------------------------------------')
+      print(gpsd)
       coords['lat'] = gpsd.fix.latitude
       coords['lon'] = gpsd.fix.longitude
+      coords['eps'] = gpsd.fix.eps
+      coords['epx'] = gpsd.fix.epx
+      coords['epv'] = gpsd.fix.epv
+      coords['ept'] = gpsd.fix.ept
+      coords['spd'] = gpsd.fix.speed
+      coords['clm'] = gpsd.fix.climb
+      coords['trk'] = gpsd.fix.track
+      coords['mod'] = gpsd.fix.mode
+      coords['sat'] = str(gpsd.satellites)
       coords['utc'] = gpsd.utc
       time.sleep(SAMPLE_RATE) 
     #print "\nKilling Thread..."
+    print('----------------------------------------')
+    print(coords)
     gpsp.running = False
     gpsp.join() # wait for the thread to finish what it's doing 
-  except (SystemExit):
+  except (KeyboardInterrupt,SystemExit):
     #print "\nKilling Thread..."
     gpsp.running = False
     gpsp.join() # wait for the thread to finish what it's doing
-  #print "latitude: "+str(coords['lat'])
-  #print "longitude: "+str(coords['lon'])
-  #print "time: "+str(coords['utc'])
-  #print "Done.\nExiting."
   return coords
 
 def main():
-  print "Starting.... %s"%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()))
-  # use GPS data for message
-  i=0
-  while i<10:
-    coords = getCoords()
-    lat=str(coords['lat'])
-    lon=str(coords['lon'])
-    utc=str(coords['utc'])
-    print "lat: " + lat
-    print "lon: " + lon
-    print "utc: " + utc
-    i=i+1
-  print "Ending..."
+  client = MongoClient('mongodb://localhost:27017')
+  gpsdb = client.gpsdb
+  collectionDate = time.strftime("%Y%m%d%H%M%S", time.gmtime())
+  gpscol = gpsdb[str('trip'+collectionDate)]
+  print("Starting.... %s"%(time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())))
+  while 0==0:
+    gpsData = getGpsData()
+    gpscol.insert(gpsData)
+  print("Ending...")
 
 if __name__ == '__main__':
     main()
